@@ -16,7 +16,7 @@ RUN apk update && apk upgrade && apk add --no-cache \
     php${PHP_VERSION}-openssl \
     php${PHP_VERSION}-xml \
     php${PHP_VERSION}-zip \
-    php${PHP_VERSION}-redis \
+    php${PHP_VERSION}-phar \
     wget \
     unzip && \
     sed -i "s|listen = 127.0.0.1:9000|listen = 9000|g" \
@@ -26,13 +26,15 @@ RUN apk update && apk upgrade && apk add --no-cache \
     sed -i "s|;listen.group = nobody|listen.group = nobody|g" \
       /etc/php8/php-fpm.d/www.conf && \
     rm -f /var/cache/apk/*
+RUN wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+RUN chmod +x wp-cli.phar
+RUN cp wp-cli.phar /usr/bin/wp
 WORKDIR /var/www
 RUN wget https://wordpress.org/latest.zip && \
     unzip latest.zip && \
     cp -rf wordpress/* . && \
     rm -rf wordpress latest.zip
 COPY ./requirements/wordpress/conf/wp-config-create.sh .
-RUN sh wp-config-create.sh && rm wp-config-create.sh && \
-    chmod -R 0777 wp-content/
+RUN chmod -R 0777 wp-content
 EXPOSE 9000
-CMD ["/usr/sbin/php-fpm8", "-F"]
+CMD ["sh", "wp-config-create.sh"]
